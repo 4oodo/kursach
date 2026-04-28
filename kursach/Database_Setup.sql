@@ -20,6 +20,15 @@ USE EnergyManagement;
 GO
 
 -- 2. Создание таблиц
+CREATE TABLE dbo.[User] ( 
+	UserID INT PRIMARY KEY IDENTITY(1,1), 
+	Username NVARCHAR(100) NOT NULL UNIQUE, 
+	Password NVARCHAR(255) NOT NULL,
+	Email NVARCHAR(255),
+	FullName NVARCHAR(255),
+	IsAdmin BIT NOT NULL DEFAULT 0
+);
+
 CREATE TABLE dbo.Building ( 
 	BuildingID INT PRIMARY KEY IDENTITY(1,1), 
 	BuildingName NVARCHAR(255) NOT NULL, 
@@ -63,6 +72,12 @@ CREATE INDEX IX_EnergyConsumption_TimePeriodID ON dbo.EnergyConsumption(TimePeri
 CREATE INDEX IX_EnergyConsumption_Date ON dbo.EnergyConsumption([Date]);
 
 -- 4. Добавление тестовых данных
+-- Добавление пользователей
+INSERT INTO dbo.[User] (Username, Password, Email, FullName, IsAdmin) VALUES 
+('admin', 'admin123', 'admin@energy.com', 'Администратор', 1),
+('user1', 'user123', 'user1@energy.com', 'Иван Петров', 0),
+('user2', 'user123', 'user2@energy.com', 'Мария Сидорова', 0);
+
 -- Добавление зданий
 INSERT INTO dbo.Building (BuildingName, Address) VALUES 
 ('Главное здание', 'ул. Ленина, 10'),
@@ -120,6 +135,8 @@ BEGIN
 
 	SET @i = @i + 1;
 END
+
+GO
 
 -- 5. Создание представлений для отчетов
 CREATE VIEW vw_EnergyReport AS

@@ -290,6 +290,41 @@ namespace kursach.Services
             return rooms;
         }
 
+        public ObservableCollection<Room> GetRoomsByBuilding(int buildingID)
+        {
+            var rooms = new ObservableCollection<Room>();
+            using (SqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                string query = @"SELECT r.RoomID, r.BuildingID, r.Floor, r.RoomCategoryID, 
+                                       b.BuildingName, rc.CategoryName
+                                FROM dbo.Room r
+                                JOIN dbo.Building b ON r.BuildingID = b.BuildingID
+                                JOIN dbo.RoomCategory rc ON r.RoomCategoryID = rc.RoomCategoryID
+                                WHERE r.BuildingID = @buildingID";
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@buildingID", buildingID);
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            rooms.Add(new Room
+                            {
+                                RoomID = (int)reader["RoomID"],
+                                BuildingID = (int)reader["BuildingID"],
+                                Floor = (int)reader["Floor"],
+                                RoomCategoryID = (int)reader["RoomCategoryID"],
+                                BuildingName = reader["BuildingName"].ToString(),
+                                CategoryName = reader["CategoryName"].ToString()
+                            });
+                        }
+                    }
+                }
+            }
+            return rooms;
+        }
+
         public void AddRoom(Room room)
         {
             using (SqlConnection conn = GetConnection())
@@ -522,6 +557,135 @@ namespace kursach.Services
                     }
                     return dt;
                 }
+            }
+        }
+
+        #endregion
+
+        #region Report Methods
+
+        public ObservableCollection<EnergyConsumption> GetEnergyReportByBuilding()
+        {
+            return GetAllEnergyConsumptions();
+        }
+
+        public ObservableCollection<EnergyConsumption> GetEnergyReportByRoom()
+        {
+            return GetAllEnergyConsumptions();
+        }
+
+        public ObservableCollection<EnergyConsumption> GetEnergyReportByTimePeriod()
+        {
+            return GetAllEnergyConsumptions();
+        }
+
+        #endregion
+
+        #region Alias Methods
+
+        /// <summary>
+        /// Alias для GetAllEnergyConsumptions
+        /// </summary>
+        public ObservableCollection<EnergyConsumption> GetAllEnergyConsumption()
+        {
+            return GetAllEnergyConsumptions();
+        }
+
+        #endregion
+
+        #region User Management
+
+        /// <summary>
+        /// Проверяет логин и пароль пользователя
+        /// </summary>
+        public User AuthenticateUser(string username, string password)
+        {
+            using (SqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                string query = "SELECT UserID, Username, Password, Email, FullName, IsAdmin FROM dbo.[User] WHERE Username = @username AND Password = @password";
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@username", username);
+                    cmd.Parameters.AddWithValue("@password", password);
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            return new User
+                            {
+                                UserID = (int)reader["UserID"],
+                                Username = reader["Username"].ToString(),
+                                Password = reader["Password"].ToString(),
+                                Email = reader["Email"].ToString(),
+                                FullName = reader["FullName"].ToString(),
+                                IsAdmin = (bool)reader["IsAdmin"]
+                            };
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Получает пользователя по ID
+        /// </summary>
+        public User GetUserByID(int userID)
+        {
+            using (SqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                string query = "SELECT UserID, Username, Password, Email, FullName, IsAdmin FROM dbo.[User] WHERE UserID = @userID";
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@userID", userID);
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            return new User
+                            {
+                                UserID = (int)reader["UserID"],
+                                Username = reader["Username"].ToString(),
+                                Password = reader["Password"].ToString(),
+                                Email = reader["Email"].ToString(),
+                                FullName = reader["FullName"].ToString(),
+                                IsAdmin = (bool)reader["IsAdmin"]
+                            };
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Создает нового пользователя
+        /// </summary>
+        public bool CreateUser(User user)
+        {
+            try
+            {
+                using (SqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+                    string query = "INSERT INTO dbo.[User] (Username, Password, Email, FullName, IsAdmin) VALUES (@username, @password, @email, @fullName, @isAdmin)";
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@username", user.Username ?? "");
+                        cmd.Parameters.AddWithValue("@password", user.Password ?? "");
+                        cmd.Parameters.AddWithValue("@email", user.Email ?? "");
+                        cmd.Parameters.AddWithValue("@fullName", user.FullName ?? "");
+                        cmd.Parameters.AddWithValue("@isAdmin", user.IsAdmin);
+                        cmd.ExecuteNonQuery();
+                        return true;
+                    }
+                }
+            }
+            catch
+            {
+                return false;
             }
         }
 
