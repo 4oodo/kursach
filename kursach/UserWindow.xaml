@@ -21,7 +21,7 @@
                 <StackPanel Margin="10">
                     <TextBlock Text="Список зданий" FontSize="14" FontWeight="Bold" Margin="0,0,0,10"/>
                     <DataGrid x:Name="BuildingDataGrid" Height="500" AutoGenerateColumns="True" 
-                              CanUserAddRows="False" CanUserDeleteRows="False" Margin="0,0,0,10"/>
+                              CanUserAddRows="False" CanUserDeleteRows="False"/>
                 </StackPanel>
             </TabItem>
 

@@ -122,6 +122,8 @@
     </None>
     <None Include="README.md" />
     <None Include="Technical_Documentation.md" />
+    <None Include="USER_CABINET_GUIDE.md" />
+    <None Include="USER_CABINET_IMPLEMENTATION.md" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
