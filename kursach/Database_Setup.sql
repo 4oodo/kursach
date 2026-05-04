@@ -20,16 +20,29 @@ USE EnergyManagement;
 GO
 
 -- 2. Создание таблиц
-CREATE TABLE dbo.[User] ( 
-	UserID INT PRIMARY KEY IDENTITY(1,1), 
-	Username NVARCHAR(100) NOT NULL UNIQUE, 
-	Password NVARCHAR(255) NOT NULL,
-	Email NVARCHAR(255),
-	FullName NVARCHAR(255),
-	IsAdmin BIT NOT NULL DEFAULT 0
+-- Таблица ролей
+CREATE TABLE dbo.Role (
+	RoleID INT PRIMARY KEY IDENTITY(1,1),
+	RoleName NVARCHAR(100) NOT NULL UNIQUE
 );
 
-CREATE TABLE dbo.Building ( 
+-- Таблица ключей администратора
+CREATE TABLE dbo.AdminKey (
+	KeyID INT PRIMARY KEY IDENTITY(1,1),
+	AdminKeyValue NVARCHAR(100) NOT NULL UNIQUE,
+	IsActive TINYINT NOT NULL DEFAULT 1
+);
+
+-- Таблица пользователей (обновленная)
+CREATE TABLE dbo.[User] (
+	UserID INT PRIMARY KEY IDENTITY(1,1),
+	Username NVARCHAR(45) NOT NULL UNIQUE,
+	PasswordHash NVARCHAR(4000) NOT NULL,
+	RoleID INT NOT NULL,
+	FOREIGN KEY (RoleID) REFERENCES dbo.Role(RoleID)
+);
+
+CREATE TABLE dbo.Building (
 	BuildingID INT PRIMARY KEY IDENTITY(1,1), 
 	BuildingName NVARCHAR(255) NOT NULL, 
 	Address NVARCHAR(500) NOT NULL 
@@ -70,13 +83,24 @@ CREATE INDEX IX_Room_RoomCategoryID ON dbo.Room(RoomCategoryID);
 CREATE INDEX IX_EnergyConsumption_RoomID ON dbo.EnergyConsumption(RoomID);
 CREATE INDEX IX_EnergyConsumption_TimePeriodID ON dbo.EnergyConsumption(TimePeriodID);
 CREATE INDEX IX_EnergyConsumption_Date ON dbo.EnergyConsumption([Date]);
+CREATE INDEX IX_User_RoleID ON dbo.[User](RoleID);
 
 -- 4. Добавление тестовых данных
--- Добавление пользователей
-INSERT INTO dbo.[User] (Username, Password, Email, FullName, IsAdmin) VALUES 
-('admin', 'admin123', 'admin@energy.com', 'Администратор', 1),
-('user1', 'user123', 'user1@energy.com', 'Иван Петров', 0),
-('user2', 'user123', 'user2@energy.com', 'Мария Сидорова', 0);
+-- Добавление ролей
+INSERT INTO dbo.Role (RoleName) VALUES 
+('User'),
+('Admin');
+
+-- Добавление ключей администратора
+INSERT INTO dbo.AdminKey (AdminKeyValue, IsActive) VALUES 
+('ADMIN_KEY_2024_001', 1),
+('ADMIN_KEY_2024_002', 1);
+
+-- Добавление пользователей (пароли захеширины с использованием SHA256)
+INSERT INTO dbo.[User] (Username, PasswordHash, RoleID) VALUES 
+('admin', '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', 2), -- admin123
+('user1', '04f8996da763b7a969b1028ee3007569eaf3a635486ddab211d512c85b9df8fb', 1), -- user123
+('user2', '04f8996da763b7a969b1028ee3007569eaf3a635486ddab211d512c85b9df8fb', 1); -- user123
 
 -- Добавление зданий
 INSERT INTO dbo.Building (BuildingName, Address) VALUES 
@@ -135,8 +159,6 @@ BEGIN
 
 	SET @i = @i + 1;
 END
-
-GO
 
 -- 5. Создание представлений для отчетов
 CREATE VIEW vw_EnergyReport AS

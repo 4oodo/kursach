@@ -16,9 +16,9 @@ namespace kursach.Services
 
         public DatabaseService()
         {
-            // Используем хардкодированную строку подключения вместо ConfigurationManager
-            // Для .NET Framework 4.7.2 - используем минимальный набор параметров
-            _connectionString = "Data Source=DESKTOP-N513RVN;Initial Catalog=EnergyManagement;Integrated Security=True;Connect Timeout=30;Encrypt=False";
+            // SQL Server 2019 - используем правильное имя экземпляра
+            // Если MSSQL17 не работает, используем просто localhost или (local)
+            _connectionString = @"Data Source=localhost;Initial Catalog=EnergyManagement;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=True";
 
             // Добавляем обработчик для проверки SSL-сертификата (для надежности)
             ServicePointManager.ServerCertificateValidationCallback = ValidateServerCertificate;
@@ -297,11 +297,11 @@ namespace kursach.Services
             {
                 conn.Open();
                 string query = @"SELECT r.RoomID, r.BuildingID, r.Floor, r.RoomCategoryID, 
-                                       b.BuildingName, rc.CategoryName
-                                FROM dbo.Room r
-                                JOIN dbo.Building b ON r.BuildingID = b.BuildingID
-                                JOIN dbo.RoomCategory rc ON r.RoomCategoryID = rc.RoomCategoryID
-                                WHERE r.BuildingID = @buildingID";
+                               b.BuildingName, rc.CategoryName
+                        FROM dbo.Room r
+                        INNER JOIN dbo.Building b ON r.BuildingID = b.BuildingID
+                        INNER JOIN dbo.RoomCategory rc ON r.RoomCategoryID = rc.RoomCategoryID
+                        WHERE r.BuildingID = @buildingID";
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
                     cmd.Parameters.AddWithValue("@buildingID", buildingID);
@@ -562,52 +562,21 @@ namespace kursach.Services
 
         #endregion
 
-        #region Report Methods
-
-        public ObservableCollection<EnergyConsumption> GetEnergyReportByBuilding()
-        {
-            return GetAllEnergyConsumptions();
-        }
-
-        public ObservableCollection<EnergyConsumption> GetEnergyReportByRoom()
-        {
-            return GetAllEnergyConsumptions();
-        }
-
-        public ObservableCollection<EnergyConsumption> GetEnergyReportByTimePeriod()
-        {
-            return GetAllEnergyConsumptions();
-        }
-
-        #endregion
-
-        #region Alias Methods
-
-        /// <summary>
-        /// Alias для GetAllEnergyConsumptions
-        /// </summary>
-        public ObservableCollection<EnergyConsumption> GetAllEnergyConsumption()
-        {
-            return GetAllEnergyConsumptions();
-        }
-
-        #endregion
-
         #region User Management
 
-        /// <summary>
-        /// Проверяет логин и пароль пользователя
-        /// </summary>
-        public User AuthenticateUser(string username, string password)
+        public User AuthenticateUser(string username, string passwordHash)
         {
             using (SqlConnection conn = GetConnection())
             {
                 conn.Open();
-                string query = "SELECT UserID, Username, Password, Email, FullName, IsAdmin FROM dbo.[User] WHERE Username = @username AND Password = @password";
+                string query = @"SELECT u.UserID, u.Username, u.PasswordHash, u.RoleID, r.RoleName 
+                               FROM dbo.[User] u
+                               INNER JOIN dbo.Role r ON u.RoleID = r.RoleID
+                               WHERE u.Username = @username AND u.PasswordHash = @passwordHash";
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
                     cmd.Parameters.AddWithValue("@username", username);
-                    cmd.Parameters.AddWithValue("@password", password);
+                    cmd.Parameters.AddWithValue("@passwordHash", passwordHash);
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
                         if (reader.Read())
@@ -616,10 +585,9 @@ namespace kursach.Services
                             {
                                 UserID = (int)reader["UserID"],
                                 Username = reader["Username"].ToString(),
-                                Password = reader["Password"].ToString(),
-                                Email = reader["Email"].ToString(),
-                                FullName = reader["FullName"].ToString(),
-                                IsAdmin = (bool)reader["IsAdmin"]
+                                PasswordHash = reader["PasswordHash"].ToString(),
+                                RoleID = (int)reader["RoleID"],
+                                RoleName = reader["RoleName"].ToString()
                             };
                         }
                     }
@@ -628,56 +596,193 @@ namespace kursach.Services
             return null;
         }
 
-        /// <summary>
-        /// Получает пользователя по ID
-        /// </summary>
-        public User GetUserByID(int userID)
-        {
-            using (SqlConnection conn = GetConnection())
-            {
-                conn.Open();
-                string query = "SELECT UserID, Username, Password, Email, FullName, IsAdmin FROM dbo.[User] WHERE UserID = @userID";
-                using (SqlCommand cmd = new SqlCommand(query, conn))
-                {
-                    cmd.Parameters.AddWithValue("@userID", userID);
-                    using (SqlDataReader reader = cmd.ExecuteReader())
-                    {
-                        if (reader.Read())
-                        {
-                            return new User
-                            {
-                                UserID = (int)reader["UserID"],
-                                Username = reader["Username"].ToString(),
-                                Password = reader["Password"].ToString(),
-                                Email = reader["Email"].ToString(),
-                                FullName = reader["FullName"].ToString(),
-                                IsAdmin = (bool)reader["IsAdmin"]
-                            };
-                        }
-                    }
-                }
-            }
-            return null;
-        }
-
-        /// <summary>
-        /// Создает нового пользователя
-        /// </summary>
-        public bool CreateUser(User user)
+        public bool CreateUser(string username, string passwordHash, int roleID)
         {
             try
             {
                 using (SqlConnection conn = GetConnection())
                 {
                     conn.Open();
-                    string query = "INSERT INTO dbo.[User] (Username, Password, Email, FullName, IsAdmin) VALUES (@username, @password, @email, @fullName, @isAdmin)";
+                    string query = "INSERT INTO dbo.[User] (Username, PasswordHash, RoleID) VALUES (@username, @passwordHash, @roleID)";
                     using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
-                        cmd.Parameters.AddWithValue("@username", user.Username ?? "");
-                        cmd.Parameters.AddWithValue("@password", user.Password ?? "");
-                        cmd.Parameters.AddWithValue("@email", user.Email ?? "");
-                        cmd.Parameters.AddWithValue("@fullName", user.FullName ?? "");
-                        cmd.Parameters.AddWithValue("@isAdmin", user.IsAdmin);
+                        cmd.Parameters.AddWithValue("@username", username);
+                        cmd.Parameters.AddWithValue("@passwordHash", passwordHash);
+                        cmd.Parameters.AddWithValue("@roleID", roleID);
+                        int rowsAffected = cmd.ExecuteNonQuery();
+                        return rowsAffected > 0;
+                    }
+                }
+            }
+            catch (SqlException sqlEx)
+            {
+                System.Diagnostics.Debug.WriteLine($"SQL Error in CreateUser: {sqlEx.Message}");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in CreateUser: {ex.Message}");
+                return false;
+            }
+        }
+
+        public bool UserExists(string username)
+        {
+            using (SqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                string query = "SELECT COUNT(*) FROM dbo.[User] WHERE Username = @username";
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@username", username);
+                    return (int)cmd.ExecuteScalar() > 0;
+                }
+            }
+        }
+
+        #endregion
+
+        #region Role Management
+
+        public ObservableCollection<Role> GetAllRoles()
+        {
+            var roles = new ObservableCollection<Role>();
+            using (SqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                string query = "SELECT RoleID, RoleName FROM dbo.Role";
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            roles.Add(new Role
+                            {
+                                RoleID = (int)reader["RoleID"],
+                                RoleName = reader["RoleName"].ToString()
+                            });
+                        }
+                    }
+                }
+            }
+            return roles;
+        }
+
+        public int GetRoleIDByName(string roleName)
+        {
+            using (SqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                string query = "SELECT RoleID FROM dbo.Role WHERE RoleName = @roleName";
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@roleName", roleName);
+                    object result = cmd.ExecuteScalar();
+                    return result != null ? (int)result : 0;
+                }
+            }
+        }
+
+        #endregion
+
+        #region AdminKey Management
+
+        public bool ValidateAdminKey(string keyValue)
+        {
+            using (SqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                string query = "SELECT COUNT(*) FROM dbo.AdminKey WHERE AdminKeyValue = @keyValue AND IsActive = 1";
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@keyValue", keyValue);
+                    return (int)cmd.ExecuteScalar() > 0;
+                }
+            }
+        }
+
+        public ObservableCollection<AdminKey> GetAllAdminKeys()
+        {
+            var keys = new ObservableCollection<AdminKey>();
+            using (SqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                string query = "SELECT KeyID, AdminKeyValue, IsActive FROM dbo.AdminKey";
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            keys.Add(new AdminKey
+                            {
+                                KeyID = (int)reader["KeyID"],
+                                AdminKeyValue = reader["AdminKeyValue"].ToString(),
+                                IsActive = (bool)reader["IsActive"]
+                            });
+                        }
+                    }
+                }
+            }
+            return keys;
+        }
+
+        public bool AddAdminKey(string keyValue)
+        {
+            try
+            {
+                using (SqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+                    string query = "INSERT INTO dbo.AdminKey (AdminKeyValue, IsActive) VALUES (@keyValue, 1)";
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@keyValue", keyValue);
+                        cmd.ExecuteNonQuery();
+                        return true;
+                    }
+                }
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public bool DeactivateAdminKey(int keyID)
+        {
+            try
+            {
+                using (SqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+                    string query = "UPDATE dbo.AdminKey SET IsActive = 0 WHERE KeyID = @keyID";
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@keyID", keyID);
+                        cmd.ExecuteNonQuery();
+                        return true;
+                    }
+                }
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public bool DeleteAdminKey(int keyID)
+        {
+            try
+            {
+                using (SqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+                    string query = "DELETE FROM dbo.AdminKey WHERE KeyID = @keyID";
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@keyID", keyID);
                         cmd.ExecuteNonQuery();
                         return true;
                     }

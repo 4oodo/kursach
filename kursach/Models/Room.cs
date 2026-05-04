@@ -8,5 +8,11 @@ namespace kursach.Models
         public int RoomCategoryID { get; set; }
         public string BuildingName { get; set; }
         public string CategoryName { get; set; }
+
+        /// <summary>Подпись для списков и фильтров.</summary>
+        public string RoomDisplay =>
+            string.IsNullOrEmpty(BuildingName)
+                ? $"Помещение №{RoomID}, эт. {Floor}"
+                : $"{BuildingName}, эт. {Floor}, №{RoomID} ({CategoryName})";
     }
 }

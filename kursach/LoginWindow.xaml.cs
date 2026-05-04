@@ -1,6 +1,9 @@
+using System;
 using System.Windows;
+using System.Windows.Controls;
 using kursach.Models;
 using kursach.Services;
+using kursach.Utilities;
 
 namespace kursach
 {
@@ -16,7 +19,7 @@ namespace kursach
 
         private void LoginButton_Click(object sender, RoutedEventArgs e)
         {
-            string username = UsernameTextBox.Text;
+            string username = UsernameTextBox.Text.Trim();
             string password = PasswordBox.Password;
 
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
@@ -25,29 +28,38 @@ namespace kursach
                 return;
             }
 
-            User user = _dbService.AuthenticateUser(username, password);
-
-            if (user != null)
+            try
             {
-                if (user.IsAdmin)
+                string passwordHash = PasswordHasher.HashPassword(password);
+                User user = _dbService.AuthenticateUser(username, passwordHash);
+
+                if (user != null)
                 {
-                    // Открываем окно администратора
-                    MainWindow adminWindow = new MainWindow();
-                    adminWindow.Show();
+                    if (user.RoleName == "Admin")
+                    {
+                        // Открываем окно администратора
+                        MainWindow adminWindow = new MainWindow(user);
+                        adminWindow.Show();
+                    }
+                    else
+                    {
+                        // Открываем окно пользователя
+                        UserWindow userWindow = new UserWindow(user);
+                        userWindow.Show();
+                    }
+
+                    this.Close();
                 }
                 else
                 {
-                    // Открываем окно пользователя
-                    UserWindow userWindow = new UserWindow(user);
-                    userWindow.Show();
+                    ErrorMessage.Text = "Неверное имя пользователя или пароль!";
+                    PasswordBox.Clear();
                 }
-
-                this.Close();
             }
-            else
+            catch (Exception ex)
             {
-                ErrorMessage.Text = "Неверное имя пользователя или пароль!";
-                PasswordBox.Clear();
+                ErrorMessage.Text = $"Ошибка подключения: {ex.Message}";
+                System.Diagnostics.Debug.WriteLine($"Login error: {ex}");
             }
         }
 
@@ -55,6 +67,26 @@ namespace kursach
         {
             RegisterWindow registerWindow = new RegisterWindow();
             registerWindow.ShowDialog();
+        }
+
+        private void LoginButton_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            (sender as Button).Background = System.Windows.Media.Brushes.LimeGreen;
+        }
+
+        private void LoginButton_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            (sender as Button).Background = System.Windows.Media.Brushes.Green;
+        }
+
+        private void RegisterButton_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            (sender as Button).Background = System.Windows.Media.Brushes.DeepSkyBlue;
+        }
+
+        private void RegisterButton_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            (sender as Button).Background = System.Windows.Media.Brushes.RoyalBlue;
         }
     }
 }
