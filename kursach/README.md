@@ -57,7 +57,7 @@
 ### Требования
 - .NET Framework 4.7.2
 - SQL Server 2017 или новее
-- Visual Studio 2019 или новее
+- Visual Studio 2019 или нове
 
 ### Шаг 1: Подготовка базы данных
 
