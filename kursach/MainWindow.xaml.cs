@@ -9,6 +9,7 @@ namespace kursach
     public partial class MainWindow : Window
     {
         private DatabaseService _dbService;
+        private User _currentUser;
         private Building _selectedBuilding;
         private RoomCategory _selectedCategory;
         private TimePeriod _selectedTimePeriod;
@@ -19,6 +20,15 @@ namespace kursach
         {
             InitializeComponent();
             _dbService = new DatabaseService();
+            _currentUser = null;
+            LoadInitialData();
+        }
+
+        public MainWindow(User user)
+        {
+            InitializeComponent();
+            _dbService = new DatabaseService();
+            _currentUser = user;
             LoadInitialData();
         }
 
@@ -31,6 +41,7 @@ namespace kursach
                 RefreshTimePeriodBtn_Click(null, null);
                 RefreshRoomBtn_Click(null, null);
                 RefreshEnergyBtn_Click(null, null);
+                RefreshAdminKeys();
             }
             catch (Exception ex)
             {
@@ -614,6 +625,149 @@ namespace kursach
         }
 
         #endregion
+
+        #region AdminKey Management
+
+        private void AddAdminKeyBtn_Click(object sender, RoutedEventArgs e)
+        {
+            string newKeyValue = NewAdminKeyTextBox.Text.Trim();
+
+            if (string.IsNullOrWhiteSpace(newKeyValue))
+            {
+                MessageBox.Show("Введите значение ключа!", "Ошибка");
+                return;
+            }
+
+            if (newKeyValue.Length < 8)
+            {
+                MessageBox.Show("Ключ должен быть не менее 8 символов!", "Ошибка");
+                return;
+            }
+
+            try
+            {
+                if (_dbService.AddAdminKey(newKeyValue))
+                {
+                    MessageBox.Show("✅ Ключ администратора успешно добавлен!", "Успех");
+                    NewAdminKeyTextBox.Clear();
+                    RefreshAdminKeys();
+                }
+                else
+                {
+                    MessageBox.Show("❌ Ошибка при добавлении ключа. Возможно, такой ключ уже существует.", "Ошибка");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка: {ex.Message}", "Ошибка");
+            }
+        }
+
+        private void DeactivateKeyBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (AdminKeysDataGrid.SelectedItem == null)
+            {
+                MessageBox.Show("Выберите ключ из списка!", "Ошибка");
+                return;
+            }
+
+            AdminKey selectedKey = AdminKeysDataGrid.SelectedItem as AdminKey;
+            if (selectedKey == null)
+                return;
+
+            MessageBoxResult result = MessageBox.Show(
+                $"Вы уверены, что хотите деактивировать ключ '{selectedKey.AdminKeyValue}'?",
+                "Подтверждение",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                try
+                {
+                    if (_dbService.DeactivateAdminKey(selectedKey.KeyID))
+                    {
+                        MessageBox.Show("✅ Ключ успешно деактивирован!", "Успех");
+                        RefreshAdminKeys();
+                    }
+                    else
+                    {
+                        MessageBox.Show("❌ Ошибка при деактивации ключа.", "Ошибка");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Ошибка: {ex.Message}", "Ошибка");
+                }
+            }
+        }
+
+        private void DeleteKeyBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (AdminKeysDataGrid.SelectedItem == null)
+            {
+                MessageBox.Show("Выберите ключ из списка!", "Ошибка");
+                return;
+            }
+
+            AdminKey selectedKey = AdminKeysDataGrid.SelectedItem as AdminKey;
+            if (selectedKey == null)
+                return;
+
+            MessageBoxResult result = MessageBox.Show(
+                $"Вы уверены, что хотите удалить ключ '{selectedKey.AdminKeyValue}'?",
+                "Подтверждение",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                try
+                {
+                    if (_dbService.DeleteAdminKey(selectedKey.KeyID))
+                    {
+                        MessageBox.Show("✅ Ключ успешно удален!", "Успех");
+                        RefreshAdminKeys();
+                    }
+                    else
+                    {
+                        MessageBox.Show("❌ Ошибка при удалении ключа.", "Ошибка");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Ошибка: {ex.Message}", "Ошибка");
+                }
+            }
+        }
+
+        private void RefreshKeysBtn_Click(object sender, RoutedEventArgs e)
+        {
+            RefreshAdminKeys();
+        }
+
+        private void AdminKeysDataGrid_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            // При двойном клике можно добавить дополнительные действия
+            if (AdminKeysDataGrid.SelectedItem != null)
+            {
+                AdminKey selectedKey = AdminKeysDataGrid.SelectedItem as AdminKey;
+                MessageBox.Show($"Ключ: {selectedKey.AdminKeyValue}\nАктивен: {(selectedKey.IsActive ? "Да" : "Нет")}", "Информация о ключе");
+            }
+        }
+
+        private void RefreshAdminKeys()
+        {
+            try
+            {
+                AdminKeysDataGrid.ItemsSource = _dbService.GetAllAdminKeys();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка загрузки ключей: {ex.Message}", "Ошибка");
+            }
+        }
+
+        #endregion
     }
 }
-

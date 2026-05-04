@@ -55,8 +55,24 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="LoginWindow.xaml.cs">
+      <DependentUpon>LoginWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Models\AdminKey.cs" />
+    <Compile Include="Models\Role.cs" />
+    <Compile Include="Models\User.cs" />
+    <Compile Include="RegisterWindow.xaml.cs">
+      <DependentUpon>RegisterWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Services\DatabaseService.cs" />
+    <Compile Include="UserWindow.xaml.cs">
+      <DependentUpon>UserWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Utilities\DatabaseConnectionTester.cs" />
+    <Compile Include="Utilities\PasswordHasher.cs" />
+    <Page Include="LoginWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -69,6 +85,12 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="RegisterWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Models\Building.cs" />
@@ -97,12 +119,17 @@
     </EmbeddedResource>
     <None Include="Administrator_Guide.md" />
     <None Include="COMPLETION_SUMMARY.md" />
+    <None Include="FILTERING_GUIDE.md" />
+    <None Include="IMPLEMENTATION_COMPLETE.md" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
+    <None Include="QUICK_DATA_LOAD.md" />
     <None Include="README.md" />
+    <None Include="SETUP_AND_TEST_GUIDE.md" />
     <None Include="Technical_Documentation.md" />
+    <None Include="USER_CABINET_GUIDE.md" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -110,6 +137,8 @@
   <ItemGroup>
     <Content Include="Database_Setup.sql" />
     <Content Include="InitializeDatabase.sql" />
+    <Content Include="InsertTestData.sql" />
+    <Content Include="LoadAllTestData.sql" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
