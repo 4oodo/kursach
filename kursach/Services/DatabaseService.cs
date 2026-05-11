@@ -705,25 +705,50 @@ namespace kursach.Services
         public ObservableCollection<AdminKey> GetAllAdminKeys()
         {
             var keys = new ObservableCollection<AdminKey>();
-            using (SqlConnection conn = GetConnection())
+            try
             {
-                conn.Open();
-                string query = "SELECT KeyID, AdminKeyValue, IsActive FROM dbo.AdminKey";
-                using (SqlCommand cmd = new SqlCommand(query, conn))
+                using (SqlConnection conn = GetConnection())
                 {
-                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    conn.Open();
+                    string query = "SELECT KeyID, AdminKeyValue, IsActive FROM dbo.AdminKey";
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
-                        while (reader.Read())
+                        using (SqlDataReader reader = cmd.ExecuteReader())
                         {
-                            keys.Add(new AdminKey
+                            while (reader.Read())
                             {
-                                KeyID = (int)reader["KeyID"],
-                                AdminKeyValue = reader["AdminKeyValue"].ToString(),
-                                IsActive = (bool)reader["IsActive"]
-                            });
+                                object isActiveValue = reader["IsActive"];
+                                bool isActive = false;
+
+                                if (isActiveValue != DBNull.Value)
+                                {
+                                    if (isActiveValue is bool)
+                                        isActive = (bool)isActiveValue;
+                                    else if (isActiveValue is int)
+                                        isActive = (int)isActiveValue != 0;
+                                    else if (isActiveValue is byte)
+                                        isActive = (byte)isActiveValue != 0;
+                                    else
+                                        isActive = Convert.ToBoolean(isActiveValue);
+                                }
+
+                                var key = new AdminKey
+                                {
+                                    KeyID = (int)reader["KeyID"],
+                                    AdminKeyValue = reader["AdminKeyValue"] != DBNull.Value ? reader["AdminKeyValue"].ToString() : string.Empty,
+                                    IsActive = isActive
+                                };
+                                keys.Add(key);
+                                System.Diagnostics.Debug.WriteLine($"Added key: ID={key.KeyID}, Value={key.AdminKeyValue}, Active={key.IsActive}");
+                            }
                         }
                     }
                 }
+                System.Diagnostics.Debug.WriteLine($"GetAllAdminKeys: Total keys loaded = {keys.Count}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error loading admin keys: {ex.Message}\n{ex.StackTrace}");
             }
             return keys;
         }

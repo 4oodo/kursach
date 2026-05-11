@@ -117,28 +117,18 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <None Include="Administrator_Guide.md" />
-    <None Include="COMPLETION_SUMMARY.md" />
     <None Include="FILTERING_GUIDE.md" />
     <None Include="IMPLEMENTATION_COMPLETE.md" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
-    <None Include="QUICK_DATA_LOAD.md" />
-    <None Include="README.md" />
-    <None Include="SETUP_AND_TEST_GUIDE.md" />
-    <None Include="Technical_Documentation.md" />
-    <None Include="USER_CABINET_GUIDE.md" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Database_Setup.sql" />
-    <Content Include="InitializeDatabase.sql" />
-    <Content Include="InsertTestData.sql" />
-    <Content Include="LoadAllTestData.sql" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

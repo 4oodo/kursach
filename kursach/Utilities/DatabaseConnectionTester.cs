@@ -38,7 +38,7 @@ namespace kursach.Utilities
                 using (SqlConnection conn = new SqlConnection(_connectionString))
                 {
                     conn.Open();
-                    Console.WriteLine("✓ Подключение к БД успешно!");
+                    Console.WriteLine("Подключение к БД успешно!");
 
                     // Проверяем наличие таблиц
                     SqlCommand cmd = new SqlCommand(
@@ -48,11 +48,11 @@ namespace kursach.Utilities
                     int result = (int)cmd.ExecuteScalar();
                     if (result > 0)
                     {
-                        Console.WriteLine("✓ Таблица Building найдена!");
+                        Console.WriteLine("Таблица Building найдена!");
                     }
                     else
                     {
-                        Console.WriteLine("✗ Таблица Building не найдена! Запустите Database_Setup.sql");
+                        Console.WriteLine("Таблица Building не найдена! Запустите Database_Setup.sql");
                         return false;
                     }
 
@@ -61,12 +61,12 @@ namespace kursach.Utilities
             }
             catch (SqlException ex)
             {
-                Console.WriteLine($"✗ Ошибка подключения к БД: {ex.Message}");
+                Console.WriteLine($"Ошибка подключения к БД: {ex.Message}");
                 return false;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"✗ Неожиданная ошибка: {ex.Message}");
+                Console.WriteLine($"Неожиданная ошибка: {ex.Message}");
                 return false;
             }
         }

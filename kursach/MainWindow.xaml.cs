@@ -648,13 +648,13 @@ namespace kursach
             {
                 if (_dbService.AddAdminKey(newKeyValue))
                 {
-                    MessageBox.Show("✅ Ключ администратора успешно добавлен!", "Успех");
+                    MessageBox.Show("Ключ администратора успешно добавлен!", "Успех");
                     NewAdminKeyTextBox.Clear();
                     RefreshAdminKeys();
                 }
                 else
                 {
-                    MessageBox.Show("❌ Ошибка при добавлении ключа. Возможно, такой ключ уже существует.", "Ошибка");
+                    MessageBox.Show("Ошибка при добавлении ключа. Возможно, такой ключ уже существует.", "Ошибка");
                 }
             }
             catch (Exception ex)
@@ -687,12 +687,12 @@ namespace kursach
                 {
                     if (_dbService.DeactivateAdminKey(selectedKey.KeyID))
                     {
-                        MessageBox.Show("✅ Ключ успешно деактивирован!", "Успех");
+                        MessageBox.Show("Ключ успешно деактивирован!", "Успех");
                         RefreshAdminKeys();
                     }
                     else
                     {
-                        MessageBox.Show("❌ Ошибка при деактивации ключа.", "Ошибка");
+                        MessageBox.Show("Ошибка при деактивации ключа.", "Ошибка");
                     }
                 }
                 catch (Exception ex)
@@ -726,12 +726,12 @@ namespace kursach
                 {
                     if (_dbService.DeleteAdminKey(selectedKey.KeyID))
                     {
-                        MessageBox.Show("✅ Ключ успешно удален!", "Успех");
+                        MessageBox.Show("Ключ успешно удален!", "Успех");
                         RefreshAdminKeys();
                     }
                     else
                     {
-                        MessageBox.Show("❌ Ошибка при удалении ключа.", "Ошибка");
+                        MessageBox.Show("Ошибка при удалении ключа.", "Ошибка");
                     }
                 }
                 catch (Exception ex)
@@ -760,11 +760,15 @@ namespace kursach
         {
             try
             {
-                AdminKeysDataGrid.ItemsSource = _dbService.GetAllAdminKeys();
+                var keys = _dbService.GetAllAdminKeys();
+                System.Diagnostics.Debug.WriteLine($"Loaded {keys.Count} admin keys");
+                AdminKeysDataGrid.ItemsSource = keys;
+                AdminKeysDataGrid.Items.Refresh();
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Ошибка загрузки ключей: {ex.Message}", "Ошибка");
+                System.Diagnostics.Debug.WriteLine($"Error loading admin keys: {ex}");
             }
         }
 

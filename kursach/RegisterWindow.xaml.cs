@@ -101,12 +101,12 @@ namespace kursach
                 // Создание пользователя
                 if (_dbService.CreateUser(username, passwordHash, roleID))
                 {
-                    MessageBox.Show("✅ Регистрация успешна! Теперь вы можете войти в систему.", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show("Регистрация успешна! Теперь вы можете войти в систему.", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
                     this.Close();
                 }
                 else
                 {
-                    ErrorMessage.Text = "❌ Ошибка при сохранении пользователя в БД. Проверьте подключение.";
+                    ErrorMessage.Text = "Ошибка при сохранении пользователя в БД. Проверьте подключение.";
                 }
             }
             catch (Exception ex)
